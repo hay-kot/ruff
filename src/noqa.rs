@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
+use itertools::Itertools;
 use nohash_hasher::IntMap;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -13,9 +14,9 @@ static NO_QA_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         r"(?P<spaces>\s*)(?P<noqa>(?i:# noqa)(?::\s?(?P<codes>([A-Z]+[0-9]+(?:[,\s]+)?)+))?)",
     )
-    .expect("Invalid regex")
+    .unwrap()
 });
-static SPLIT_COMMA_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"[,\s]").expect("Invalid regex"));
+static SPLIT_COMMA_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"[,\s]").unwrap());
 
 #[derive(Debug)]
 pub enum Directive<'a> {
@@ -52,12 +53,13 @@ pub fn extract_noqa_directive(line: &str) -> Directive {
 }
 
 pub fn add_noqa(
+    path: &Path,
     checks: &[Check],
     contents: &str,
     noqa_line_for: &IntMap<usize, usize>,
-    path: &Path,
+    external: &BTreeSet<String>,
 ) -> Result<usize> {
-    let (count, output) = add_noqa_inner(checks, contents, noqa_line_for);
+    let (count, output) = add_noqa_inner(checks, contents, noqa_line_for, external);
     fs::write(path, output)?;
     Ok(count)
 }
@@ -66,6 +68,7 @@ fn add_noqa_inner(
     checks: &[Check],
     contents: &str,
     noqa_line_for: &IntMap<usize, usize>,
+    external: &BTreeSet<String>,
 ) -> (usize, String) {
     let lines: Vec<&str> = contents.lines().collect();
     let mut matches_by_line: BTreeMap<usize, BTreeSet<&CheckCode>> = BTreeMap::new();
@@ -112,25 +115,47 @@ fn add_noqa_inner(
                         output.push('\n');
                         count += 1;
                     }
-                    Directive::All(_, start, _) | Directive::Codes(_, start, ..) => {
-                        let mut new_line = String::new();
-
+                    Directive::All(_, start, _) => {
                         // Add existing content.
-                        new_line.push_str(line[..start].trim_end());
+                        output.push_str(line[..start].trim_end());
 
                         // Add `noqa` directive.
-                        new_line.push_str("  # noqa: ");
+                        output.push_str("  # noqa: ");
 
                         // Add codes.
-                        let codes: Vec<&str> = codes.iter().map(AsRef::as_ref).collect();
+                        let codes: Vec<&str> =
+                            codes.iter().map(AsRef::as_ref).sorted_unstable().collect();
                         let suffix = codes.join(", ");
-                        new_line.push_str(&suffix);
+                        output.push_str(&suffix);
+                        output.push('\n');
+                        count += 1;
+                    }
+                    Directive::Codes(_, start, _, existing) => {
+                        // Reconstruct the line based on the preserved check codes.
+                        // This enables us to tally the number of edits.
+                        let mut formatted = String::new();
 
-                        output.push_str(&new_line);
+                        // Add existing content.
+                        formatted.push_str(line[..start].trim_end());
+
+                        // Add `noqa` directive.
+                        formatted.push_str("  # noqa: ");
+
+                        // Add codes.
+                        let codes: Vec<&str> = codes
+                            .iter()
+                            .map(AsRef::as_ref)
+                            .chain(existing.into_iter().filter(|code| external.contains(*code)))
+                            .sorted_unstable()
+                            .collect();
+                        let suffix = codes.join(", ");
+                        formatted.push_str(&suffix);
+
+                        output.push_str(&formatted);
                         output.push('\n');
 
                         // Only count if the new line is an actual edit.
-                        if &new_line != line {
+                        if &formatted != line {
                             count += 1;
                         }
                     }
@@ -144,6 +169,7 @@ fn add_noqa_inner(
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
 
     use nohash_hasher::IntMap;
     use rustpython_parser::ast::Location;
@@ -171,7 +197,8 @@ mod tests {
         let checks = vec![];
         let contents = "x = 1";
         let noqa_line_for = IntMap::default();
-        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for);
+        let external = BTreeSet::default();
+        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for, &external);
         assert_eq!(count, 0);
         assert_eq!(output.trim(), contents.trim());
 
@@ -184,7 +211,8 @@ mod tests {
         )];
         let contents = "x = 1";
         let noqa_line_for = IntMap::default();
-        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for);
+        let external = BTreeSet::default();
+        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for, &external);
         assert_eq!(count, 1);
         assert_eq!(output.trim(), "x = 1  # noqa: F841".trim());
 
@@ -206,7 +234,8 @@ mod tests {
         ];
         let contents = "x = 1  # noqa: E741";
         let noqa_line_for = IntMap::default();
-        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for);
+        let external = BTreeSet::default();
+        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for, &external);
         assert_eq!(count, 1);
         assert_eq!(output.trim(), "x = 1  # noqa: E741, F841".trim());
 
@@ -228,7 +257,8 @@ mod tests {
         ];
         let contents = "x = 1  # noqa";
         let noqa_line_for = IntMap::default();
-        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for);
+        let external = BTreeSet::default();
+        let (count, output) = add_noqa_inner(&checks, contents, &noqa_line_for, &external);
         assert_eq!(count, 1);
         assert_eq!(output.trim(), "x = 1  # noqa: E741, F841".trim());
     }

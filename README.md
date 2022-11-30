@@ -27,9 +27,9 @@ An extremely fast Python linter, written in Rust.
 Ruff aims to be orders of magnitude faster than alternative tools while integrating more
 functionality behind a single, common interface. Ruff can be used to replace Flake8 (plus a variety
 of plugins), [`isort`](https://pypi.org/project/isort/), [`pydocstyle`](https://pypi.org/project/pydocstyle/),
-[`yesqa`](https://github.com/asottile/yesqa), and even a subset of [`pyupgrade`](https://pypi.org/project/pyupgrade/)
-and [`autoflake`](https://pypi.org/project/autoflake/) all while executing tens or hundreds of times
-faster than any individual tool.
+[`yesqa`](https://github.com/asottile/yesqa), [`eradicate`](https://pypi.org/project/eradicate/),
+and even a subset of [`pyupgrade`](https://pypi.org/project/pyupgrade/) and [`autoflake`](https://pypi.org/project/autoflake/)
+all while executing tens or hundreds of times faster than any individual tool.
 
 Ruff is extremely actively developed and used in major open-source projects like:
 
@@ -73,6 +73,7 @@ of [Conda](https://docs.conda.io/en/latest/):
    1. [pydocstyle (D)](#pydocstyle)
    1. [pyupgrade (U)](#pyupgrade)
    1. [pep8-naming (N)](#pep8-naming)
+   1. [eradicate (ERA)](#eradicate)
    1. [flake8-bandit (S)](#flake8-bandit)
    1. [flake8-comprehensions (C)](#flake8-comprehensions)
    1. [flake8-boolean-trap (FBT)](#flake8-boolean-trap)
@@ -134,13 +135,10 @@ Ruff also works with [pre-commit](https://pre-commit.com):
 ```yaml
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.144
+    rev: v0.0.146
     hooks:
       - id: ruff
 ```
-
-<!-- TODO(charlie): Remove this message a few versions after v0.0.86. -->
-_Note: prior to `v0.0.86`, `ruff-pre-commit` used `lint` (rather than `ruff`) as the hook ID._
 
 ## Configuration
 
@@ -535,6 +533,14 @@ For more, see [pep8-naming](https://pypi.org/project/pep8-naming/0.13.2/) on PyP
 | N817 | CamelcaseImportedAsAcronym | Camelcase `...` imported as acronym `...` |  |
 | N818 | ErrorSuffixOnExceptionName | Exception name `...` should be named with an Error suffix |  |
 
+### eradicate
+
+For more, see [eradicate](https://pypi.org/project/eradicate/2.1.0/) on PyPI.
+
+| Code | Name | Message | Fix |
+| ---- | ---- | ------- | --- |
+| ERA001 | CommentedOutCode | Found commented-out code | 🛠 |
+
 ### flake8-bandit
 
 For more, see [flake8-bandit](https://pypi.org/project/flake8-bandit/4.1.1/) on PyPI.
@@ -856,27 +862,29 @@ plugins, (2) alongside Black, and (3) on Python 3 code.
 Under those conditions, Ruff implements every rule in Flake8, with the exception of `F811`.
 
 Ruff also re-implements some of the most popular Flake8 plugins and related code quality tools
-natively,  including:
+natively, including:
 
+- [`isort`](https://pypi.org/project/isort/)
 - [`pydocstyle`](https://pypi.org/project/pydocstyle/)
 - [`pep8-naming`](https://pypi.org/project/pep8-naming/)
-- [`yesqa`](https://github.com/asottile/yesqa)
-- [`flake8-bugbear`](https://pypi.org/project/flake8-bugbear/)
-- [`flake8-comprehensions`](https://pypi.org/project/flake8-comprehensions/)
-- [`flake8-docstrings`](https://pypi.org/project/flake8-docstrings/)
-- [`flake8-builtins`](https://pypi.org/project/flake8-builtins/)
-- [`flake8-debugger`](https://pypi.org/project/flake8-debugger/)
-- [`flake8-super`](https://pypi.org/project/flake8-super/)
-- [`flake8-tidy-imports`](https://pypi.org/project/flake8-tidy-imports/) (1/3)
-- [`flake8-print`](https://pypi.org/project/flake8-print/)
-- [`flake8-quotes`](https://pypi.org/project/flake8-quotes/)
+- [`flake8-2020`](https://pypi.org/project/flake8-2020/)
 - [`flake8-annotations`](https://pypi.org/project/flake8-annotations/)
 - [`flake8-bandit`](https://pypi.org/project/flake8-bandit/) (6/40)
-- [`flake8-2020`](https://pypi.org/project/flake8-2020/)
 - [`flake8-blind-except`](https://pypi.org/project/flake8-blind-except/)
 - [`flake8-boolean-trap`](https://pypi.org/project/flake8-boolean-trap/)
+- [`flake8-bugbear`](https://pypi.org/project/flake8-bugbear/)
+- [`flake8-builtins`](https://pypi.org/project/flake8-builtins/)
+- [`flake8-comprehensions`](https://pypi.org/project/flake8-comprehensions/)
+- [`flake8-debugger`](https://pypi.org/project/flake8-debugger/)
+- [`flake8-docstrings`](https://pypi.org/project/flake8-docstrings/)
+- [`flake8-eradicate`](https://pypi.org/project/flake8-eradicate/)
+- [`flake8-print`](https://pypi.org/project/flake8-print/)
+- [`flake8-quotes`](https://pypi.org/project/flake8-quotes/)
+- [`flake8-super`](https://pypi.org/project/flake8-super/)
+- [`flake8-tidy-imports`](https://pypi.org/project/flake8-tidy-imports/) (1/3)
 - [`mccabe`](https://pypi.org/project/mccabe/)
-- [`isort`](https://pypi.org/project/isort/)
+- [`yesqa`](https://github.com/asottile/yesqa)
+- [`eradicate`](https://pypi.org/project/eradicate/)
 - [`pyupgrade`](https://pypi.org/project/pyupgrade/) (16/33)
 - [`autoflake`](https://pypi.org/project/autoflake/) (1/7)
 
@@ -893,20 +901,21 @@ Today, Ruff can be used to replace Flake8 when used with any of the following pl
 
 - [`pydocstyle`](https://pypi.org/project/pydocstyle/)
 - [`pep8-naming`](https://pypi.org/project/pep8-naming/)
-- [`flake8-bugbear`](https://pypi.org/project/flake8-bugbear/)
-- [`flake8-comprehensions`](https://pypi.org/project/flake8-comprehensions/)
-- [`flake8-docstrings`](https://pypi.org/project/flake8-docstrings/)
-- [`flake8-builtins`](https://pypi.org/project/flake8-builtins/)
-- [`flake8-debugger`](https://pypi.org/project/flake8-debugger/)
-- [`flake8-super`](https://pypi.org/project/flake8-super/)
-- [`flake8-tidy-imports`](https://pypi.org/project/flake8-tidy-imports/) (1/3)
-- [`flake8-print`](https://pypi.org/project/flake8-print/)
-- [`flake8-quotes`](https://pypi.org/project/flake8-quotes/)
+- [`flake8-2020`](https://pypi.org/project/flake8-2020/)
 - [`flake8-annotations`](https://pypi.org/project/flake8-annotations/)
 - [`flake8-bandit`](https://pypi.org/project/flake8-bandit/) (6/40)
-- [`flake8-2020`](https://pypi.org/project/flake8-2020/)
 - [`flake8-blind-except`](https://pypi.org/project/flake8-blind-except/)
 - [`flake8-boolean-trap`](https://pypi.org/project/flake8-boolean-trap/)
+- [`flake8-bugbear`](https://pypi.org/project/flake8-bugbear/)
+- [`flake8-builtins`](https://pypi.org/project/flake8-builtins/)
+- [`flake8-comprehensions`](https://pypi.org/project/flake8-comprehensions/)
+- [`flake8-debugger`](https://pypi.org/project/flake8-debugger/)
+- [`flake8-docstrings`](https://pypi.org/project/flake8-docstrings/)
+- [`flake8-eradicate`](https://pypi.org/project/flake8-eradicate/)
+- [`flake8-print`](https://pypi.org/project/flake8-print/)
+- [`flake8-quotes`](https://pypi.org/project/flake8-quotes/)
+- [`flake8-super`](https://pypi.org/project/flake8-super/)
+- [`flake8-tidy-imports`](https://pypi.org/project/flake8-tidy-imports/) (1/3)
 - [`mccabe`](https://pypi.org/project/mccabe/)
 
 Ruff can also replace [`isort`](https://pypi.org/project/isort/), [`yesqa`](https://github.com/asottile/yesqa),
@@ -1338,6 +1347,27 @@ extend-select = ["B", "Q"]
 
 ---
 
+#### [`external`](#external)
+
+A list of check codes that are unsupported by Ruff, but should be preserved when (e.g.)
+validating `# noqa` directives. Useful for retaining `# noqa` directives that cover plugins not
+yet implemented in Ruff.
+
+**Default value**: `[]`
+
+**Type**: `Vec<String>`
+
+**Example usage**:
+
+```toml
+[tool.ruff]
+# Avoiding flagging (and removing) `V101` from any `# noqa` directives, despite Ruff's lack of
+# support for `vulture`.
+external = ["V101"]
+```
+
+---
+
 #### [`fix`](#fix)
 
 Enable autofix behavior by-default when running `ruff` (overridden by the `--fix` and `--no-fix`
@@ -1734,7 +1764,7 @@ The maximum McCabe complexity to allow before triggering `C901` errors.
 **Example usage**:
 
 ```toml
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.mccabe]
 # Flag errors (`C901`) whenever the complexity level exceeds 5.
 max-complexity = 5
 ```

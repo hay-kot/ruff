@@ -262,7 +262,13 @@ pub fn add_noqa_to_path(path: &Path, settings: &Settings) -> Result<usize> {
         true,
     )?;
 
-    add_noqa(&checks, &contents, &directives.noqa_line_for, path)
+    add_noqa(
+        path,
+        &checks,
+        &contents,
+        &directives.noqa_line_for,
+        &settings.external,
+    )
 }
 
 /// Apply autoformatting to the source code at the given `Path`.
@@ -399,6 +405,7 @@ mod tests {
     use crate::checks::CheckCode;
     use crate::linter::test_path;
     use crate::settings;
+    use crate::settings::types::PythonVersion;
 
     #[test_case(CheckCode::A001, Path::new("A001.py"); "A001")]
     #[test_case(CheckCode::A002, Path::new("A002.py"); "A002")]
@@ -487,9 +494,9 @@ mod tests {
     #[test_case(CheckCode::D414, Path::new("sections.py"); "D414")]
     #[test_case(CheckCode::D415, Path::new("D.py"); "D415")]
     #[test_case(CheckCode::D416, Path::new("D.py"); "D416")]
-    #[test_case(CheckCode::D417, Path::new("sections.py"); "D417_0")]
-    #[test_case(CheckCode::D417, Path::new("canonical_numpy_examples.py"); "D417_1")]
     #[test_case(CheckCode::D417, Path::new("canonical_google_examples.py"); "D417_2")]
+    #[test_case(CheckCode::D417, Path::new("canonical_numpy_examples.py"); "D417_1")]
+    #[test_case(CheckCode::D417, Path::new("sections.py"); "D417_0")]
     #[test_case(CheckCode::D418, Path::new("D.py"); "D418")]
     #[test_case(CheckCode::D419, Path::new("D.py"); "D419")]
     #[test_case(CheckCode::E402, Path::new("E402.py"); "E402")]
@@ -505,6 +512,7 @@ mod tests {
     #[test_case(CheckCode::E742, Path::new("E742.py"); "E742")]
     #[test_case(CheckCode::E743, Path::new("E743.py"); "E743")]
     #[test_case(CheckCode::E999, Path::new("E999.py"); "E999")]
+    #[test_case(CheckCode::ERA001, Path::new("ERA001.py"); "ERA001")]
     #[test_case(CheckCode::F401, Path::new("F401_0.py"); "F401_0")]
     #[test_case(CheckCode::F401, Path::new("F401_1.py"); "F401_1")]
     #[test_case(CheckCode::F401, Path::new("F401_2.py"); "F401_2")]
@@ -519,14 +527,14 @@ mod tests {
     #[test_case(CheckCode::F406, Path::new("F406.py"); "F406")]
     #[test_case(CheckCode::F407, Path::new("F407.py"); "F407")]
     #[test_case(CheckCode::F501, Path::new("F50x.py"); "F501")]
-    #[test_case(CheckCode::F502, Path::new("F50x.py"); "F502_0")]
     #[test_case(CheckCode::F502, Path::new("F502.py"); "F502_1")]
-    #[test_case(CheckCode::F503, Path::new("F50x.py"); "F503_0")]
+    #[test_case(CheckCode::F502, Path::new("F50x.py"); "F502_0")]
     #[test_case(CheckCode::F503, Path::new("F503.py"); "F503_1")]
-    #[test_case(CheckCode::F504, Path::new("F50x.py"); "F504_0")]
+    #[test_case(CheckCode::F503, Path::new("F50x.py"); "F503_0")]
     #[test_case(CheckCode::F504, Path::new("F504.py"); "F504_1")]
-    #[test_case(CheckCode::F505, Path::new("F50x.py"); "F505_0")]
+    #[test_case(CheckCode::F504, Path::new("F50x.py"); "F504_0")]
     #[test_case(CheckCode::F505, Path::new("F504.py"); "F505_1")]
+    #[test_case(CheckCode::F505, Path::new("F50x.py"); "F505_0")]
     #[test_case(CheckCode::F506, Path::new("F50x.py"); "F506")]
     #[test_case(CheckCode::F507, Path::new("F50x.py"); "F507")]
     #[test_case(CheckCode::F508, Path::new("F50x.py"); "F508")]
@@ -561,6 +569,9 @@ mod tests {
     #[test_case(CheckCode::F831, Path::new("F831.py"); "F831")]
     #[test_case(CheckCode::F841, Path::new("F841.py"); "F841")]
     #[test_case(CheckCode::F901, Path::new("F901.py"); "F901")]
+    #[test_case(CheckCode::FBT001, Path::new("FBT.py"); "FBT001")]
+    #[test_case(CheckCode::FBT002, Path::new("FBT.py"); "FBT002")]
+    #[test_case(CheckCode::FBT003, Path::new("FBT.py"); "FBT003")]
     #[test_case(CheckCode::N801, Path::new("N801.py"); "N801")]
     #[test_case(CheckCode::N802, Path::new("N802.py"); "N802")]
     #[test_case(CheckCode::N803, Path::new("N803.py"); "N803")]
@@ -576,6 +587,16 @@ mod tests {
     #[test_case(CheckCode::N816, Path::new("N816.py"); "N816")]
     #[test_case(CheckCode::N817, Path::new("N817.py"); "N817")]
     #[test_case(CheckCode::N818, Path::new("N818.py"); "N818")]
+    #[test_case(CheckCode::RUF001, Path::new("RUF001.py"); "RUF001")]
+    #[test_case(CheckCode::RUF002, Path::new("RUF002.py"); "RUF002")]
+    #[test_case(CheckCode::RUF003, Path::new("RUF003.py"); "RUF003")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_0.py"); "RUF101_0")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_1.py"); "RUF101_1")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_2.py"); "RUF101_2")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_3.py"); "RUF101_3")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_4.py"); "RUF101_4")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_5.py"); "RUF101_5")]
+    #[test_case(CheckCode::RUF101, Path::new("RUF101_6.py"); "RUF101_6")]
     #[test_case(CheckCode::S101, Path::new("S101.py"); "S101")]
     #[test_case(CheckCode::S102, Path::new("S102.py"); "S102")]
     #[test_case(CheckCode::S104, Path::new("S104.py"); "S104")]
@@ -609,16 +630,6 @@ mod tests {
     #[test_case(CheckCode::W292, Path::new("W292_2.py"); "W292_2")]
     #[test_case(CheckCode::W605, Path::new("W605_0.py"); "W605_0")]
     #[test_case(CheckCode::W605, Path::new("W605_1.py"); "W605_1")]
-    #[test_case(CheckCode::RUF001, Path::new("RUF001.py"); "RUF001")]
-    #[test_case(CheckCode::RUF002, Path::new("RUF002.py"); "RUF002")]
-    #[test_case(CheckCode::RUF003, Path::new("RUF003.py"); "RUF003")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_0.py"); "RUF101_0")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_1.py"); "RUF101_1")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_2.py"); "RUF101_2")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_3.py"); "RUF101_3")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_4.py"); "RUF101_4")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_5.py"); "RUF101_5")]
-    #[test_case(CheckCode::RUF101, Path::new("RUF101_6.py"); "RUF101_6")]
     #[test_case(CheckCode::YTT101, Path::new("YTT101.py"); "YTT101")]
     #[test_case(CheckCode::YTT102, Path::new("YTT102.py"); "YTT102")]
     #[test_case(CheckCode::YTT103, Path::new("YTT103.py"); "YTT103")]
@@ -629,9 +640,6 @@ mod tests {
     #[test_case(CheckCode::YTT301, Path::new("YTT301.py"); "YTT301")]
     #[test_case(CheckCode::YTT302, Path::new("YTT302.py"); "YTT302")]
     #[test_case(CheckCode::YTT303, Path::new("YTT303.py"); "YTT303")]
-    #[test_case(CheckCode::FBT001, Path::new("FBT.py"); "FBT001")]
-    #[test_case(CheckCode::FBT002, Path::new("FBT.py"); "FBT002")]
-    #[test_case(CheckCode::FBT003, Path::new("FBT.py"); "FBT003")]
     fn checks(check_code: CheckCode, path: &Path) -> Result<()> {
         let snapshot = format!("{}_{}", check_code.as_ref(), path.to_string_lossy());
         let mut checks = test_path(
@@ -688,6 +696,66 @@ mod tests {
         let mut checks = test_path(
             Path::new("./resources/test/fixtures/future_annotations.py"),
             &settings::Settings::for_rules(vec![CheckCode::F401, CheckCode::F821]),
+            true,
+        )?;
+        checks.sort_by_key(|check| check.location);
+        insta::assert_yaml_snapshot!(checks);
+        Ok(())
+    }
+
+    #[test]
+    fn future_annotations_pep_585_p37() -> Result<()> {
+        let mut checks = test_path(
+            Path::new("./resources/test/fixtures/future_annotations.py"),
+            &settings::Settings {
+                target_version: PythonVersion::Py37,
+                ..settings::Settings::for_rule(CheckCode::U006)
+            },
+            true,
+        )?;
+        checks.sort_by_key(|check| check.location);
+        insta::assert_yaml_snapshot!(checks);
+        Ok(())
+    }
+
+    #[test]
+    fn future_annotations_pep_585_py310() -> Result<()> {
+        let mut checks = test_path(
+            Path::new("./resources/test/fixtures/future_annotations.py"),
+            &settings::Settings {
+                target_version: PythonVersion::Py310,
+                ..settings::Settings::for_rule(CheckCode::U006)
+            },
+            true,
+        )?;
+        checks.sort_by_key(|check| check.location);
+        insta::assert_yaml_snapshot!(checks);
+        Ok(())
+    }
+
+    #[test]
+    fn future_annotations_pep_604_p37() -> Result<()> {
+        let mut checks = test_path(
+            Path::new("./resources/test/fixtures/future_annotations.py"),
+            &settings::Settings {
+                target_version: PythonVersion::Py37,
+                ..settings::Settings::for_rule(CheckCode::U007)
+            },
+            true,
+        )?;
+        checks.sort_by_key(|check| check.location);
+        insta::assert_yaml_snapshot!(checks);
+        Ok(())
+    }
+
+    #[test]
+    fn future_annotations_pep_604_py310() -> Result<()> {
+        let mut checks = test_path(
+            Path::new("./resources/test/fixtures/future_annotations.py"),
+            &settings::Settings {
+                target_version: PythonVersion::Py310,
+                ..settings::Settings::for_rule(CheckCode::U007)
+            },
             true,
         )?;
         checks.sort_by_key(|check| check.location);

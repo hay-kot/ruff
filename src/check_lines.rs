@@ -14,9 +14,9 @@ use crate::settings::Settings;
 
 // Regex from PEP263
 static CODING_COMMENT_REGEX: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^[ \t\f]*#.*?coding[:=][ \t]*utf-?8").expect("Invalid regex"));
+    Lazy::new(|| Regex::new(r"^[ \t\f]*#.*?coding[:=][ \t]*utf-?8").unwrap());
 
-static URL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://\S+$").expect("Invalid regex"));
+static URL_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^https?://\S+$").unwrap());
 
 /// Whether the given line is too long and should be reported.
 fn should_enforce_line_length(line: &str, length: usize, limit: usize) -> bool {
@@ -212,7 +212,7 @@ pub fn check_lines(
                     let mut invalid_codes = vec![];
                     let mut valid_codes = vec![];
                     for code in codes {
-                        if matches.contains(&code) {
+                        if matches.contains(&code) || settings.external.contains(code) {
                             valid_codes.push(code.to_string());
                         } else {
                             invalid_codes.push(code.to_string());
